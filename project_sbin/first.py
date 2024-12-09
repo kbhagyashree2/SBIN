@@ -1,11 +1,10 @@
 import streamlit as st
 import pandas as pd
-import plotly.express as px
 import matplotlib.pyplot as plt
-import seaborn as sns  # Import seaborn for heatmap
+import seaborn as sns  # For heatmaps
 import numpy as np  # For gradient color computation
 
-# Apply custom CSS for Color Combination 1: Dark Blue and Coral with Darker Background
+# Apply custom CSS for the dark theme
 st.markdown(
     """
     <style>
@@ -46,13 +45,11 @@ st.markdown(
 
 # Load the data
 df = pd.read_csv("SBIN_New_Data.csv")
-
-# Ensure the 'Date' column is a datetime object
 df['Date'] = pd.to_datetime(df['Date'])
 
 # Sidebar for user input
 st.sidebar.title("SBIN Stock Analysis")
-year = st.sidebar.slider("Select Year", 2000, 2024, 2024)  # Adjust the range as needed
+year = st.sidebar.slider("Select Year", 2000, 2024, 2024)
 selected_insight = st.sidebar.selectbox(
     "Select Insight",
     ["Daily Price Range", "Stock Performance Trend", "Volume Over Time", "Top N Days by Closing Price", "Correlation Between High, Low, and Volume"]
@@ -67,82 +64,69 @@ filtered_df = df[df['Year'] == year]
 if filtered_df.empty:
     st.warning("No data available for the selected year.")
 else:
-    # Real-time graph options
     if selected_insight == "Daily Price Range":
         st.subheader("Daily Price Range (High - Low)")
         filtered_df['Daily Price Range'] = filtered_df['High'] - filtered_df['Low']
-        fig = px.line(
-            filtered_df,
-            x='Date',
-            y='Daily Price Range',
-            title='Daily Price Range Over Time',
-            labels={'Daily Price Range': 'Price Range', 'Date': 'Date'},
-        )
-        st.plotly_chart(fig, use_container_width=True)
-
-        st.markdown("### Conclusion")
-        st.write("Days with higher price ranges indicate higher volatility, which could signify trading opportunities or market uncertainty. This information is valuable for day traders who rely on volatility to make quick profits. However, prolonged high volatility may also suggest market instability, warranting caution.")
+        
+        # Plot using Matplotlib
+        plt.figure(figsize=(10, 6))
+        plt.plot(filtered_df['Date'], filtered_df['Daily Price Range'], color='coral', marker='o', linestyle='-', linewidth=2)
+        plt.title('Daily Price Range Over Time')
+        plt.xlabel('Date')
+        plt.ylabel('Price Range')
+        plt.grid(True)
+        plt.xticks(rotation=45)
+        st.pyplot(plt)
 
     elif selected_insight == "Stock Performance Trend":
         st.subheader("Stock Performance Trend (Closing Price)")
-        fig = px.line(
-            filtered_df,
-            x='Date',
-            y='Close',
-            title='Stock Performance Trend (Closing Price)',
-            labels={'Close': 'Closing Price', 'Date': 'Date'},
-        )
-        st.plotly_chart(fig, use_container_width=True)
 
-        st.markdown("### Conclusion")
-        st.write("The trend of closing prices provides insights into the overall market sentiment and stock performance during the selected year. A consistent uptrend could signal investor confidence, while frequent fluctuations may indicate uncertain market conditions. Observing these trends helps investors decide the optimal time to enter or exit positions.")
+        # Plot using Matplotlib
+        plt.figure(figsize=(10, 6))
+        plt.plot(filtered_df['Date'], filtered_df['Close'], color='blue', marker='o', linestyle='-', linewidth=2)
+        plt.title('Stock Performance Trend')
+        plt.xlabel('Date')
+        plt.ylabel('Closing Price')
+        plt.grid(True)
+        plt.xticks(rotation=45)
+        st.pyplot(plt)
 
     elif selected_insight == "Volume Over Time":
         st.subheader("Trading Volume Over Time")
-        fig = px.bar(
-            filtered_df,
-            x='Date',
-            y='Volume',
-            title='Trading Volume Over Time',
-            labels={'Volume': 'Volume', 'Date': 'Date'},
-        )
-        st.plotly_chart(fig, use_container_width=True)
 
-        st.markdown("### Conclusion")
-        st.write("Spikes in trading volume often coincide with significant market events, such as announcements or news related to the stock. High volume suggests increased investor interest, which can lead to either rapid price appreciation or depreciation depending on the sentiment. Monitoring volume trends is crucial for identifying potential breakout opportunities.")
+        # Plot using Matplotlib
+        plt.figure(figsize=(10, 6))
+        plt.bar(filtered_df['Date'], filtered_df['Volume'], color='skyblue')
+        plt.title('Trading Volume Over Time')
+        plt.xlabel('Date')
+        plt.ylabel('Volume')
+        plt.xticks(rotation=45)
+        st.pyplot(plt)
 
     elif selected_insight == "Top N Days by Closing Price":
         st.subheader(f"Top 5 Days by Closing Price in {year}")
         top_days = filtered_df.nlargest(5, 'Close')
         st.dataframe(top_days[['Date', 'Close']])
-    
-        # Plot using Matplotlib with a gradient of blue shades
-        colors = plt.cm.Blues(np.linspace(0.4, 1, len(top_days)))  # Generate blue shades
+        
+        # Plot using Matplotlib
+        colors = plt.cm.Blues(np.linspace(0.4, 1, len(top_days)))
         plt.figure(figsize=(10, 6))
         plt.bar(top_days['Date'].dt.strftime('%Y-%m-%d'), top_days['Close'], color=colors)
-        plt.xticks(rotation=45)
+        plt.title("Top 5 Closing Prices")
         plt.xlabel("Date")
         plt.ylabel("Closing Price")
-        plt.title("Top 5 Closing Prices")
+        plt.xticks(rotation=45)
         st.pyplot(plt)
-
-        st.markdown("### Conclusion")
-        st.write("The top-performing days indicate peak market performance, which may be linked to positive news or market sentiment. Such days highlight periods of high investor confidence and can serve as reference points for future technical analysis or trend identification.")
 
     elif selected_insight == "Correlation Between High, Low, and Volume":
         st.subheader("Correlation Between High, Low, and Volume")
-        if not filtered_df.empty:
-            correlation_matrix = filtered_df[['High', 'Low', 'Volume']].corr()
-            st.write("Correlation Matrix:")
-            st.dataframe(correlation_matrix)
-            
-            # Plotting correlation heatmap using seaborn
-            plt.figure(figsize=(8, 6))
-            sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm', fmt=".2f")
-            plt.title("Correlation Heatmap")
-            st.pyplot(plt)
 
-            st.markdown("### Conclusion")
-            st.write("Strong correlations indicate the interdependence between price and volume metrics, helping investors understand market behavior. For example, a high correlation between volume and price changes could suggest that significant trading activity influences market movements. Such insights assist traders in aligning their strategies with market dynamics.")
-        else:
-            st.warning("No data available for the selected year.")
+        correlation_matrix = filtered_df[['High', 'Low', 'Volume']].corr()
+        st.write("Correlation Matrix:")
+        st.dataframe(correlation_matrix)
+
+        # Plot heatmap using Seaborn
+        plt.figure(figsize=(8, 6))
+        sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm', fmt=".2f")
+        plt.title("Correlation Heatmap")
+        st.pyplot(plt)
