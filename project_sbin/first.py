@@ -44,7 +44,7 @@ st.markdown(
 )
 
 # Load the data
-df = pd.read_csv("SBIN_New_Data.csv")
+df = pd.read_csv("/project_sbin/SBIN_New_Data.csv")
 df['Date'] = pd.to_datetime(df['Date'])
 
 # Sidebar for user input
